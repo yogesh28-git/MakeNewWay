@@ -3,7 +3,6 @@ using UnityEngine;
 
 namespace MakeNewWay
 {
-    [System.Serializable]
     public class LevelModel
     {
         public Dictionary<Vector3Int, ObjectType> gridDict = new Dictionary<Vector3Int, ObjectType>();

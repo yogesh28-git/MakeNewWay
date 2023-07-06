@@ -17,7 +17,7 @@ namespace MakeNewWay
         public LevelController( LevelView levelView, int numberOfPlayers )
         {
             this.levelView = levelView;
-            this.levelModel = new LevelModel();
+            this.levelModel = new LevelModel( );
             this.numberOfPlayers = numberOfPlayers;
         }
 
@@ -31,7 +31,7 @@ namespace MakeNewWay
 
         private void GameLoseCheck( )
         {
-            if(levelView.CurrentPlayerPart.Player.transform.position.y < -3 )
+            if ( levelView.CurrentPlayerPart.Player.transform.position.y < -3 )
             {
                 //Level Lost
             }
@@ -54,36 +54,64 @@ namespace MakeNewWay
 
             isMoving = true;
 
-            playerTransform.DOMove( nextPos, 0.5f ).OnComplete( ( ) => { isMoving = false; } );
+            playerTransform.DOMove( nextPos, 0.5f ).OnComplete( ( ) => {
+                isMoving = false;
+                GroundCheckAndFall( playerTransform, ObjectType.NONE );
+            } );
+            
             Vector3Int intNextPos = Vector3Int.FloorToInt( nextPos );
             ObjectType nextObj = ObjectType.NONE;
             levelModel.GetObject( intNextPos, out nextObj );
-            if(nextObj == ObjectType.MOVABLE )
+            if ( nextObj == ObjectType.MOVABLE )
             {
                 MoveTheMovable( nextPos, direction );
             }
+            
         }
 
-        private void MoveTheMovable(Vector3 movableCurrentPos, MoveDirection direction )
+        private void GroundCheckAndFall( Transform itemTransform , ObjectType type)
         {
-            Debug.Log( "Moving the movable" );
+            Vector3Int itemPos = Vector3Int.FloorToInt( itemTransform.position );
+            Vector3Int downPos = new Vector3Int( itemPos.x, itemPos.y - 1, itemPos.z );
+            ObjectType groundObj = ObjectType.NONE;
+            LevelModel.GetObject( downPos, out groundObj );
+
+            if ( groundObj == ObjectType.NONE )
+            {
+                itemTransform.DOMoveY( -5f, 2f ).OnComplete( ( ) =>
+                {
+                    itemTransform.gameObject.SetActive( false );
+                } );
+
+                if ( type == ObjectType.MOVABLE )
+                {
+                    levelModel.RemoveObject( itemPos );
+                    levelModel.RemoveMovable( itemPos );
+                }
+            }
+        }
+
+        private void MoveTheMovable( Vector3 movableCurrentPos, MoveDirection direction )
+        {
             Vector3Int intMovableCurrentPos = Vector3Int.FloorToInt( movableCurrentPos );
             Vector3 movableNextPos = CalculateNextPos( movableCurrentPos, direction );
             Vector3Int intMovableNextPos = Vector3Int.FloorToInt( movableNextPos );
 
             Transform movableTransform;
             levelModel.TryGetMovable( intMovableCurrentPos, out movableTransform );
-            Debug.Log( movableTransform );
-            movableTransform.DOMove( movableNextPos, 0.5f );
+            movableTransform.DOMove( movableNextPos, 0.5f ).OnComplete( ( ) =>
+            {
+                GroundCheckAndFall( movableTransform, ObjectType.MOVABLE );
+            } );
 
-            levelModel.RemoveObject( intMovableCurrentPos);
+            levelModel.RemoveObject( intMovableCurrentPos );
             levelModel.RemoveMovable( intMovableCurrentPos );
 
             levelModel.AddObject( intMovableNextPos, ObjectType.MOVABLE );
             levelModel.AddMovable( intMovableNextPos, movableTransform );
         }
 
-        private Vector3 CalculateNextPos(Vector3 currentPos, MoveDirection direction )
+        private Vector3 CalculateNextPos( Vector3 currentPos, MoveDirection direction )
         {
             switch ( direction )
             {
@@ -103,33 +131,32 @@ namespace MakeNewWay
             return currentPos;
         }
 
-        private bool CanItMove(Vector3 target, MoveDirection direction)
+        private bool CanItMove( Vector3 target, MoveDirection direction )
         {
             Vector3Int intTarget = Vector3Int.FloorToInt( target );
             ObjectType nextObj = ObjectType.NONE;
             levelModel.GetObject( intTarget, out nextObj );
-            if( nextObj == ObjectType.OBSTACLE)
+
+            switch ( nextObj )
             {
-                return false;
-            }
-            else if ( nextObj == ObjectType.MOVABLE )
-            {
-                Vector3 movableNextPos = CalculateNextPos(target, direction );
-                intTarget = Vector3Int.FloorToInt( movableNextPos );
-                ObjectType obj2 = ObjectType.NONE;
-                levelModel.GetObject( intTarget, out obj2 );
-                if(obj2 == ObjectType.NONE )
-                {
-                    return true;
-                }
-                else
-                {
+                case ObjectType.OBSTACLE:
                     return false;
-                }
-            }
-            else
-            {
-                return true;
+                case ObjectType.MOVABLE:
+                    Vector3 movableNextPos = CalculateNextPos( target, direction );
+                    intTarget = Vector3Int.FloorToInt( movableNextPos );
+                    ObjectType obj2 = ObjectType.NONE;
+                    levelModel.GetObject( intTarget, out obj2 );
+                    if ( obj2 == ObjectType.NONE )
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                default:
+                    //ObjectType.NONE
+                    return true;
             }
         }
 

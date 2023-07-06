@@ -40,9 +40,15 @@ namespace MakeNewWay
 
         public void SpawnPlayer( int playerIndex )
         {
+            if(currentPlayerPart != null )
+            {
+                currentPlayerPart.Player.SetActive( false );
+                currentPlayerPart.End.SetActive( false );
+            }
+
             this.currentPlayerPart = playerParts[ playerIndex ];
 
-            Vector3 startPos = currentPlayerPart.StartingPoint.position;
+            Vector3 startPos = currentPlayerPart.StartingPoint.transform.position;
             Vector3 upPos = new Vector3(startPos.x, startPos.y+1, startPos.z);
 
             currentPlayerPart.Player.transform.DOMove( upPos, 0.5f ).OnComplete( ( ) =>

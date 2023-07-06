@@ -1,6 +1,7 @@
 using DG.Tweening;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 namespace MakeNewWay
@@ -13,28 +14,41 @@ namespace MakeNewWay
         private LevelModel levelModel;
         private bool isMoving = false;
         private int numberOfPlayers;
+        private int currentPlayerNumber = 0;
 
         public LevelController( LevelView levelView, int numberOfPlayers )
         {
             this.levelView = levelView;
             this.levelModel = new LevelModel( );
             this.numberOfPlayers = numberOfPlayers;
+
         }
 
-        private void GameWinCheck( )
+        private void CheckLevelWin( )
+        {
+            this.currentPlayerNumber++;
+
+            if(currentPlayerNumber >= numberOfPlayers )
+            {
+                Debug.Log( "Level Won" );
+            }
+            else
+            {
+                levelView.SpawnPlayer( currentPlayerNumber );
+            }
+        }
+
+        private void CheckRoundWin( )
         {
             if ( levelView.CurrentPlayerPart.Player.transform.position == levelView.CurrentPlayerPart.End.transform.position )
             {
-                //Round Win
+                CheckLevelWin( );
             }
         }
 
-        private void GameLoseCheck( )
+        private void OnRoundLose( )
         {
-            if ( levelView.CurrentPlayerPart.Player.transform.position.y < -3 )
-            {
-                //Level Lost
-            }
+            
         }
 
         public void Move( MoveDirection direction )
@@ -46,7 +60,6 @@ namespace MakeNewWay
             Transform playerTransform = levelView.CurrentPlayerPart.Player.transform;
             Vector3 playerCurrentPos = playerTransform.position;
             Vector3 nextPos = CalculateNextPos( playerCurrentPos, direction );
-            Debug.Log( nextPos );
             if ( !CanItMove( nextPos, direction ) )
             {
                 return;
@@ -57,6 +70,7 @@ namespace MakeNewWay
             playerTransform.DOMove( nextPos, 0.5f ).OnComplete( ( ) => {
                 isMoving = false;
                 GroundCheckAndFall( playerTransform, ObjectType.NONE );
+                CheckRoundWin( );
             } );
             
             Vector3Int intNextPos = Vector3Int.FloorToInt( nextPos );
@@ -66,7 +80,6 @@ namespace MakeNewWay
             {
                 MoveTheMovable( nextPos, direction );
             }
-            
         }
 
         private void GroundCheckAndFall( Transform itemTransform , ObjectType type)
@@ -76,19 +89,28 @@ namespace MakeNewWay
             ObjectType groundObj = ObjectType.NONE;
             LevelModel.GetObject( downPos, out groundObj );
 
-            if ( groundObj == ObjectType.NONE )
+            if ( groundObj == ObjectType.NONE)
             {
-                itemTransform.DOMoveY( -5f, 2f ).OnComplete( ( ) =>
+                if( itemPos.y > -5 )
+                {
+                    itemTransform.DOMoveY( downPos.y, 0.2f ).SetEase(Ease.OutQuad).OnComplete( ( ) =>
+                    {
+                        Debug.Log( itemPos.y );
+                        GroundCheckAndFall( itemTransform, type );
+                    } );
+
+                    if ( type == ObjectType.MOVABLE )
+                    {
+                        levelModel.RemoveObject( itemPos );
+                        levelModel.RemoveMovable( itemPos );
+                    }
+                }
+                else
                 {
                     itemTransform.gameObject.SetActive( false );
-                } );
-
-                if ( type == ObjectType.MOVABLE )
-                {
-                    levelModel.RemoveObject( itemPos );
-                    levelModel.RemoveMovable( itemPos );
                 }
             }
+            
         }
 
         private void MoveTheMovable( Vector3 movableCurrentPos, MoveDirection direction )

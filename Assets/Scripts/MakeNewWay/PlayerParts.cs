@@ -6,7 +6,7 @@ namespace MakeNewWay
     public class PlayerParts
     {
         public GameObject Player;
-        public Transform StartingPoint;
+        public GameObject StartingPoint;
         public GameObject End;
     }
 }

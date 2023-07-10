@@ -16,12 +16,15 @@ namespace MakeNewWay
         private int numberOfPlayers;
         private int currentPlayerNumber = 0;
 
+        private UndoController undoController;
+
         public LevelController( LevelView levelView, int numberOfPlayers )
         {
             this.levelView = levelView;
             this.levelModel = new LevelModel( );
             this.numberOfPlayers = numberOfPlayers;
 
+            undoController = new UndoController( this );
         }
 
         private void CheckLevelWin( )
@@ -48,7 +51,6 @@ namespace MakeNewWay
 
         private void OnRoundLose( )
         {
-            
         }
 
         public void Move( MoveDirection direction )
@@ -59,7 +61,10 @@ namespace MakeNewWay
             }
             Transform playerTransform = levelView.CurrentPlayerPart.Player.transform;
             Vector3 playerCurrentPos = playerTransform.position;
+            Vector3Int intCurrentPos = Vector3Int.FloorToInt( playerCurrentPos );
             Vector3 nextPos = CalculateNextPos( playerCurrentPos, direction );
+            Vector3Int intNextPos = Vector3Int.FloorToInt( nextPos );
+
             if ( !CanItMove( nextPos, direction ) )
             {
                 return;
@@ -69,11 +74,12 @@ namespace MakeNewWay
 
             playerTransform.DOMove( nextPos, 0.5f ).OnComplete( ( ) => {
                 isMoving = false;
+                undoController.AddToUndo(playerTransform, ObjectType.NONE, intCurrentPos, intNextPos );
                 GroundCheckAndFall( playerTransform, ObjectType.NONE );
                 CheckRoundWin( );
             } );
             
-            Vector3Int intNextPos = Vector3Int.FloorToInt( nextPos );
+            
             ObjectType nextObj = ObjectType.NONE;
             levelModel.GetObject( intNextPos, out nextObj );
             if ( nextObj == ObjectType.MOVABLE )
@@ -93,22 +99,22 @@ namespace MakeNewWay
             {
                 if( itemPos.y > -5 )
                 {
+                    isMoving = true;
                     itemTransform.DOMoveY( downPos.y, 0.2f ).SetEase(Ease.OutQuad).OnComplete( ( ) =>
                     {
-                        Debug.Log( itemPos.y );
+                        isMoving = false;
                         GroundCheckAndFall( itemTransform, type );
                     } );
 
                     if ( type == ObjectType.MOVABLE )
                     {
                         levelModel.RemoveObject( itemPos );
-                        levelModel.RemoveMovable( itemPos );
                     }
                 }
-                else
+                /*else
                 {
                     itemTransform.gameObject.SetActive( false );
-                }
+                }*/
             }
             
         }
@@ -121,8 +127,12 @@ namespace MakeNewWay
 
             Transform movableTransform;
             levelModel.TryGetMovable( intMovableCurrentPos, out movableTransform );
-            movableTransform.DOMove( movableNextPos, 0.5f ).OnComplete( ( ) =>
+
+            isMoving = true;
+            movableTransform.DOMove( movableNextPos, 0.6f ).OnComplete( ( ) =>
             {
+                isMoving = false;
+                undoController.AddToUndo( movableTransform, ObjectType.MOVABLE, intMovableCurrentPos, intMovableNextPos );
                 GroundCheckAndFall( movableTransform, ObjectType.MOVABLE );
             } );
 
@@ -180,6 +190,15 @@ namespace MakeNewWay
                     //ObjectType.NONE
                     return true;
             }
+        }
+
+        public void UndoGame( )
+        {
+            if ( isMoving )
+            {
+                return;
+            }
+            undoController.Undo( );
         }
 
     }

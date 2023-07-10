@@ -82,6 +82,11 @@ namespace MakeNewWay
             {
                 levelController.Move( MoveDirection.DOWN );
             }
+
+            if ( Input.GetKeyDown( KeyCode.Z ) )
+            {
+                levelController.UndoGame( );
+            }
         }
     }
 }

@@ -13,45 +13,19 @@ namespace MakeNewWay
         private LevelView levelView;
         private LevelModel levelModel;
         private bool isMoving = false;
-        private int numberOfPlayers;
-        private int currentPlayerNumber = 0;
+        
 
         private UndoController undoController;
 
-        public LevelController( LevelView levelView, int numberOfPlayers )
+        public LevelController( LevelView levelView)
         {
             this.levelView = levelView;
             this.levelModel = new LevelModel( );
-            this.numberOfPlayers = numberOfPlayers;
 
             undoController = new UndoController( this );
         }
 
-        private void CheckLevelWin( )
-        {
-            this.currentPlayerNumber++;
-
-            if(currentPlayerNumber >= numberOfPlayers )
-            {
-                Debug.Log( "Level Won" );
-            }
-            else
-            {
-                levelView.SpawnPlayer( currentPlayerNumber );
-            }
-        }
-
-        private void CheckRoundWin( )
-        {
-            if ( levelView.CurrentPlayerPart.Player.transform.position == levelView.CurrentPlayerPart.End.transform.position )
-            {
-                CheckLevelWin( );
-            }
-        }
-
-        private void OnRoundLose( )
-        {
-        }
+        
 
         public void Move( MoveDirection direction )
         {
@@ -76,7 +50,7 @@ namespace MakeNewWay
                 isMoving = false;
                 undoController.AddToUndo(playerTransform, ObjectType.NONE, intCurrentPos, intNextPos );
                 GroundCheckAndFall( playerTransform, ObjectType.NONE );
-                CheckRoundWin( );
+                levelView.CheckRoundWin( );
             } );
             
             

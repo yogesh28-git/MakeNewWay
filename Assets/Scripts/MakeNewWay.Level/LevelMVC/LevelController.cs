@@ -77,13 +77,14 @@ namespace MakeNewWay.Level
                     itemTransform.DOMoveY( downPos.y, 0.2f ).SetEase(Ease.OutQuad).OnComplete( ( ) =>
                     {
                         isMoving = false;
+                        if ( type == ObjectType.MOVABLE )
+                        {
+                            levelModel.RemoveObject( itemPos );
+                            Vector3Int itemNewPos = Vector3Int.FloorToInt( itemTransform.position );
+                            levelModel.AddObject( itemNewPos, ObjectType.MOVABLE );
+                        }
                         GroundCheckAndFall( itemTransform, type );
                     } );
-
-                    if ( type == ObjectType.MOVABLE )
-                    {
-                        levelModel.RemoveObject( itemPos );
-                    }
                 }
                 /*else
                 {

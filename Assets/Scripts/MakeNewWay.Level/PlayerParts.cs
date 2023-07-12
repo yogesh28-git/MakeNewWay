@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace MakeNewWay
+namespace MakeNewWay.Level
 {
     [System.Serializable]
     public class PlayerParts

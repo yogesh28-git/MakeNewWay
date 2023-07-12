@@ -16,11 +16,9 @@ namespace MakeNewWay
         {
             PlayerPrefs.SetInt( levelName, ( int ) status );
         }
-        public void UnlockNextLevel( )
+        public void UnlockNextLevel(int levelNumber)
         {
-            int currentLevelIndex = SceneManager.GetActiveScene( ).buildIndex;
-            int nextLevelIndex = currentLevelIndex + 1;
-            string nextLevelName = SceneManager.GetSceneByBuildIndex( nextLevelIndex ).name; 
+            string nextLevelName = "Level" + (levelNumber+1).ToString();
             if ( GetLevelStatus( nextLevelName ) == LevelStatus.LOCKED )
             {
                 SetLevelStatus( nextLevelName, LevelStatus.UNLOCKED );

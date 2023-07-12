@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-namespace MakeNewWay
+namespace MakeNewWay.Level
 {
     public class LevelController
     {
@@ -46,7 +46,7 @@ namespace MakeNewWay
 
             isMoving = true;
 
-            playerTransform.DOMove( nextPos, 0.5f ).OnComplete( ( ) => {
+            playerTransform.DOMove( nextPos, 0.3f ).OnComplete( ( ) => {
                 isMoving = false;
                 undoController.AddToUndo(playerTransform, ObjectType.NONE, intCurrentPos, intNextPos );
                 GroundCheckAndFall( playerTransform, ObjectType.NONE );
@@ -103,7 +103,7 @@ namespace MakeNewWay
             levelModel.TryGetMovable( intMovableCurrentPos, out movableTransform );
 
             isMoving = true;
-            movableTransform.DOMove( movableNextPos, 0.6f ).OnComplete( ( ) =>
+            movableTransform.DOMove( movableNextPos, 0.3f ).OnComplete( ( ) =>
             {
                 isMoving = false;
                 undoController.AddToUndo( movableTransform, ObjectType.MOVABLE, intMovableCurrentPos, intMovableNextPos );

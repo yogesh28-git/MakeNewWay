@@ -1,4 +1,4 @@
-namespace MakeNewWay
+namespace MakeNewWay.Level
 {
     public enum MoveDirection
     {

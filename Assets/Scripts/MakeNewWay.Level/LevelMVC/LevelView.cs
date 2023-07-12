@@ -3,8 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using MakeNewWay.UI;
 
-namespace MakeNewWay
+namespace MakeNewWay.Level
 {
     public class LevelView : MonoBehaviour
     {
@@ -105,7 +106,10 @@ namespace MakeNewWay
 
             if ( currentPlayerNumber >= numberOfPlayers )
             {
-                GameManagerService.Instance.UnlockNextLevel();
+                if(levelNumber < maxLevelNumber )
+                {
+                    GameManagerService.Instance.UnlockNextLevel( levelNumber );
+                }
                 StartCoroutine(NextLevelCoroutine());
             }
             else
@@ -115,13 +119,21 @@ namespace MakeNewWay
         }
         private void PlayerFinishAnimation( )
         {
-            Vector3 playerCurrentPos = currentPlayerPart.Player.transform.position;
-            float upPos = playerCurrentPos.y + 1;
-            currentPlayerPart.Player.transform.DOMoveY( upPos, 0.3f ).OnComplete( ( ) =>
+            try
             {
-                currentPlayerPart.Player.transform.DOMoveY( playerCurrentPos.y, 0.3f );
-            } );
-            currentPlayerPart.Player.transform.DORotate( new Vector3( 0, 360, 0 ), 0.1f, RotateMode.FastBeyond360 ).SetLoops( 6, LoopType.Restart );
+                Vector3 playerCurrentPos = currentPlayerPart.Player.transform.position;
+                float upPos = playerCurrentPos.y + 1;
+                currentPlayerPart.Player.transform.DOMoveY( upPos, 0.3f ).OnComplete( ( ) =>
+                {
+                    currentPlayerPart.Player.transform.DOMoveY( playerCurrentPos.y, 0.3f );
+                } );
+                currentPlayerPart.Player.transform.DORotate( new Vector3( 0, 360, 0 ), 0.1f, RotateMode.FastBeyond360 ).SetLoops( 6, LoopType.Restart );
+            }
+            catch
+            {
+                Debug.Log( "Error here" );
+            }
+            
         }
 
         private IEnumerator NextLevelCoroutine( )
@@ -138,7 +150,15 @@ namespace MakeNewWay
             uiController.SetTextCompletion( "Completed" );
             uiController.ToggleTextCompletion( );
             yield return new WaitForSeconds( 1.5f );
-            uiController.SetTextCompletion( "Next " + (levelNumber+1).ToString() + "/10" );
+            if( levelNumber < maxLevelNumber )
+            {
+                uiController.SetTextCompletion( "Next " + ( levelNumber + 1 ).ToString( ) + "/10" );
+            }
+            else
+            {
+                uiController.SetTextCompletion( "Congratulations!");
+            }
+                
             yield return new WaitForSeconds( 1.5f );
 
             //Cleanup

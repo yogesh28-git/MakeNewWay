@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace MakeNewWay
+namespace MakeNewWay.UI
 {
     public class MenuUIController : MonoBehaviour
     {

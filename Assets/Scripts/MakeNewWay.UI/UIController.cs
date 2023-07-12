@@ -4,7 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace MakeNewWay
+namespace MakeNewWay.UI
 {
     public class UIController : MonoBehaviour
     {

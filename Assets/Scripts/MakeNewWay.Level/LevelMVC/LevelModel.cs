@@ -5,8 +5,8 @@ namespace MakeNewWay.Level
 {
     public class LevelModel
     {
-        public Dictionary<Vector3Int, ObjectType> gridDict = new Dictionary<Vector3Int, ObjectType>();
-        public Dictionary<Vector3Int, Transform> movablesDict = new Dictionary<Vector3Int, Transform>();
+        private Dictionary<Vector3Int, ObjectType> gridDict = new Dictionary<Vector3Int, ObjectType>();
+        private Dictionary<Vector3Int, Transform> movablesDict = new Dictionary<Vector3Int, Transform>();
         public bool GetObject( Vector3Int pos, out ObjectType obj )
         {
             bool result  = gridDict.TryGetValue( pos, out obj );

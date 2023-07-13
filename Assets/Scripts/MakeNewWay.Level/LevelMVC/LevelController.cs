@@ -141,29 +141,52 @@ namespace MakeNewWay.Level
 
         private void MoveTheMovable( Vector3 movableCurrentPos, MoveDirection direction )
         {
+            List<Transform> movables = new List<Transform>();
             Vector3Int intMovableCurrentPos = Vector3Int.FloorToInt( movableCurrentPos );
-            Vector3 movableNextPos = CalculateNextPos( movableCurrentPos, direction );
-            Vector3Int intMovableNextPos = Vector3Int.FloorToInt( movableNextPos );
-
             Transform movableTransform;
             levelModel.TryGetMovable( intMovableCurrentPos, out movableTransform );
+            movables.Add(movableTransform );
 
             isMoving = true;
-            movableTransform.DOMove( movableNextPos, 0.2f ).OnComplete( ( ) =>
+
+            ObjectType aboveMovable = ObjectType.NONE;
+            do
             {
-                isMoving = false;
-                undoController.AddToUndo( movableTransform, ObjectType.MOVABLE, intMovableCurrentPos, intMovableNextPos );
-                GroundCheckAndFall( movableTransform, ObjectType.MOVABLE );
-            } );
+                Vector3Int currentPos = Vector3Int.FloorToInt( movableCurrentPos );
+                Vector3Int upPos = new Vector3Int( currentPos.x, currentPos.y + 1, currentPos.z );
+                bool isMovable = levelModel.TryGetMovable( upPos, out movableTransform );
+                if ( isMovable )
+                {
+                    aboveMovable = ObjectType.MOVABLE;
+                    movableCurrentPos = movableTransform.position;
+                    movables.Add( movableTransform );
+                }
+                else
+                {
+                    aboveMovable = ObjectType.NONE;
+                }
+            } while ( aboveMovable != ObjectType.NONE );
 
-            levelModel.RemoveObject( intMovableCurrentPos );
-            levelModel.RemoveMovable( intMovableCurrentPos );
+            foreach(var mov in  movables )
+            {
+                Vector3Int currentPos = Vector3Int.FloorToInt( mov.position );
+                Vector3 movableNextPos = CalculateNextPos( currentPos, direction );
+                Vector3Int intMovableNextPos = Vector3Int.FloorToInt( movableNextPos );
 
-            levelModel.AddObject( intMovableNextPos, ObjectType.MOVABLE );
-            levelModel.AddMovable( intMovableNextPos, movableTransform );
+                mov.DOMove( movableNextPos, 0.2f ).OnComplete( ( ) =>
+                {
+                    isMoving = false;
+                    undoController.AddToUndo( mov, ObjectType.MOVABLE, currentPos, intMovableNextPos );
+                    GroundCheckAndFall( mov, ObjectType.MOVABLE );
+                } );
+
+                levelModel.RemoveObject( currentPos );
+                levelModel.RemoveMovable( currentPos );
+
+                levelModel.AddObject( intMovableNextPos, ObjectType.MOVABLE );
+                levelModel.AddMovable( intMovableNextPos, mov );
+            }            
         }
-
-
 
         private Vector3 CalculateNextPos( Vector3 currentPos, MoveDirection direction )
         {

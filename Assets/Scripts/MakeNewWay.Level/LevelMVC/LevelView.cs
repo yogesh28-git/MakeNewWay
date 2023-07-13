@@ -15,6 +15,7 @@ namespace MakeNewWay.Level
         [SerializeField] private Transform[] Obstacles;
         [SerializeField] private Transform[] Movables;
         [SerializeField] private PlayerParts[] playerParts;
+        [SerializeField] private PlayerOnMovable[] playerOnMovables;
         [SerializeField] private UIController uiController;
         [SerializeField] private int levelNumber;
 
@@ -43,6 +44,16 @@ namespace MakeNewWay.Level
                 levelController.LevelModel.AddObject( Vector3Int.FloorToInt( movable.position ), ObjectType.MOVABLE );
                 levelController.LevelModel.AddMovable( Vector3Int.FloorToInt( movable.position ), movable );
             }
+
+            if(playerOnMovables != null )
+            {
+                foreach ( var player in playerOnMovables )
+                {
+                    player.Player.SetParent( player.Movable );
+                }
+            }
+
+            uiController.ChangeLevelNumber( levelNumber );
             SpawnPlayer( 0 );
         }
 
@@ -56,12 +67,16 @@ namespace MakeNewWay.Level
 
             this.currentPlayerPart = playerParts[ playerIndex ];
 
-            Vector3 startPos = currentPlayerPart.StartingPoint.transform.position;
+            Vector3 playerPos = currentPlayerPart.Player.transform.position;
+            Vector3 startPos = new Vector3( Mathf.Floor(playerPos.x), Mathf.Floor(playerPos.y + 1), Mathf.Floor(playerPos.z) );
             Vector3 upPos = new Vector3(startPos.x, startPos.y+1, startPos.z);
 
             AudioService.Instance.PlaySound( SoundType.JUMP );
 
             IsInputInterrupted = true;
+
+            currentPlayerPart.Player.transform.parent = null;
+
             currentPlayerPart.Player.transform.DOMove( upPos, 0.5f ).OnComplete( ( ) =>
             {
                 currentPlayerPart.Player.transform.DOMove( startPos, 0.5f ).OnComplete( ( ) =>

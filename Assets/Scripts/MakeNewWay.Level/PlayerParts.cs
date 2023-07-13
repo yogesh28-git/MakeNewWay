@@ -6,7 +6,6 @@ namespace MakeNewWay.Level
     public class PlayerParts
     {
         public GameObject Player;
-        public GameObject StartingPoint;
         public GameObject End;
     }
 }

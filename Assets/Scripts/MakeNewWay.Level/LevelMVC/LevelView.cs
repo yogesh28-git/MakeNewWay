@@ -28,7 +28,7 @@ namespace MakeNewWay.Level
 
         private void Awake( )
         {
-            levelController = new LevelController( this );
+            levelController = new LevelController( this, uiController);
             numberOfPlayers = playerParts.Length;
         }
         private void Start( )
@@ -59,9 +59,15 @@ namespace MakeNewWay.Level
             Vector3 startPos = currentPlayerPart.StartingPoint.transform.position;
             Vector3 upPos = new Vector3(startPos.x, startPos.y+1, startPos.z);
 
+            AudioService.Instance.PlaySound( SoundType.JUMP );
+
+            IsInputInterrupted = true;
             currentPlayerPart.Player.transform.DOMove( upPos, 0.5f ).OnComplete( ( ) =>
             {
-                currentPlayerPart.Player.transform.DOMove( startPos, 0.5f );
+                currentPlayerPart.Player.transform.DOMove( startPos, 0.5f ).OnComplete( ( ) =>
+                {
+                    IsInputInterrupted = false;
+                } );
             } );
 
             currentPlayerPart.Player.transform.DORotate( new Vector3( 0, 0, 360 ), 0.3f, RotateMode.FastBeyond360 ).SetLoops( 3, LoopType.Restart );
@@ -98,6 +104,16 @@ namespace MakeNewWay.Level
             {
                 levelController.UndoGame( );
             }
+            if ( Input.GetKeyDown( KeyCode.Q ) || Input.GetKeyDown(KeyCode.Escape) )
+            {
+                AudioService.Instance.PlaySound( SoundType.CLICK );
+                QuitToMenu( );
+            }
+            if(Input.GetKeyDown( KeyCode.R ) )
+            {
+                AudioService.Instance.PlaySound( SoundType.CLICK );
+                ReloadScene( );
+            }
         }
 
         private void CheckLevelWin( )
@@ -121,6 +137,7 @@ namespace MakeNewWay.Level
         {
             try
             {
+                AudioService.Instance.PlaySound( SoundType.WIN );
                 Vector3 playerCurrentPos = currentPlayerPart.Player.transform.position;
                 float upPos = playerCurrentPos.y + 1;
                 currentPlayerPart.Player.transform.DOMoveY( upPos, 0.3f ).OnComplete( ( ) =>
@@ -177,11 +194,18 @@ namespace MakeNewWay.Level
             }
         }
 
-        public void CheckRoundWin( )
+        public bool CheckRoundWin( )
         {
-            if ( currentPlayerPart.Player.transform.position == currentPlayerPart.End.transform.position )
+            Vector3Int playerPos = Vector3Int.FloorToInt( currentPlayerPart.Player.transform.position );
+            Vector3Int endPos = Vector3Int.FloorToInt( currentPlayerPart.End.transform.position );
+            if ( playerPos == endPos )
             {
                 CheckLevelWin( );
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
 
@@ -204,8 +228,15 @@ namespace MakeNewWay.Level
             IsInputInterrupted = false;
         }
 
-        private void OnRoundLose( )
+        private void QuitToMenu( )
         {
+            SceneManager.LoadScene( 0 );
         }
+
+        private void ReloadScene( )
+        {
+            SceneManager.LoadScene( SceneManager.GetActiveScene( ).buildIndex );
+        }
+
     }
 }

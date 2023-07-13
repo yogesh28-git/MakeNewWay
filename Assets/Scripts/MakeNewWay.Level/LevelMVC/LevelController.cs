@@ -1,7 +1,7 @@
 using DG.Tweening;
+using MakeNewWay.UI;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 
 namespace MakeNewWay.Level
@@ -13,19 +13,28 @@ namespace MakeNewWay.Level
         private LevelView levelView;
         private LevelModel levelModel;
         private bool isMoving = false;
-        
+        private bool isGameOver = false;
+        private MusicType currentMusic;
+        private int currentRound;
+
 
         private UndoController undoController;
+        private UIController uiController;
 
-        public LevelController( LevelView levelView)
+        public LevelController( LevelView levelView, UIController uiController )
         {
             this.levelView = levelView;
             this.levelModel = new LevelModel( );
+            this.uiController = uiController;
 
             undoController = new UndoController( this );
+
+            currentMusic = MusicType.FIRST_MUSIC;
+            AudioService.Instance.ChangeMusic( currentMusic );
+            currentRound = 1;
         }
 
-        
+
 
         public void Move( MoveDirection direction )
         {
@@ -46,14 +55,21 @@ namespace MakeNewWay.Level
 
             isMoving = true;
 
-            playerTransform.DOMove( nextPos, 0.3f ).OnComplete( ( ) => {
+            AudioService.Instance.PlaySound( SoundType.MOVE );
+            playerTransform.DOMove( nextPos, 0.2f ).OnComplete( ( ) =>
+            {
                 isMoving = false;
-                undoController.AddToUndo(playerTransform, ObjectType.NONE, intCurrentPos, intNextPos );
+                undoController.AddToUndo( playerTransform, ObjectType.NONE, intCurrentPos, intNextPos );
                 GroundCheckAndFall( playerTransform, ObjectType.NONE );
-                levelView.CheckRoundWin( );
+                bool isRoundWon = levelView.CheckRoundWin( );
+                if ( isRoundWon )
+                {
+                    currentRound = 2;
+                    currentMusic = MusicType.SECOND_MUSIC;
+                    AudioService.Instance.ChangeMusic( currentMusic );
+                }
             } );
-            
-            
+
             ObjectType nextObj = ObjectType.NONE;
             levelModel.GetObject( intNextPos, out nextObj );
             if ( nextObj == ObjectType.MOVABLE )
@@ -62,19 +78,19 @@ namespace MakeNewWay.Level
             }
         }
 
-        private void GroundCheckAndFall( Transform itemTransform , ObjectType type)
+        private void GroundCheckAndFall( Transform itemTransform, ObjectType type)
         {
             Vector3Int itemPos = Vector3Int.FloorToInt( itemTransform.position );
             Vector3Int downPos = new Vector3Int( itemPos.x, itemPos.y - 1, itemPos.z );
             ObjectType groundObj = ObjectType.NONE;
             LevelModel.GetObject( downPos, out groundObj );
 
-            if ( groundObj == ObjectType.NONE)
+            if ( groundObj == ObjectType.NONE )
             {
-                if( itemPos.y > -5 )
+                if ( itemPos.y > -5 )
                 {
                     isMoving = true;
-                    itemTransform.DOMoveY( downPos.y, 0.2f ).SetEase(Ease.OutQuad).OnComplete( ( ) =>
+                    itemTransform.DOMoveY( downPos.y, 0.2f ).SetEase( Ease.OutQuad ).OnComplete( ( ) =>
                     {
                         isMoving = false;
                         if ( type == ObjectType.MOVABLE )
@@ -86,12 +102,41 @@ namespace MakeNewWay.Level
                         GroundCheckAndFall( itemTransform, type );
                     } );
                 }
-                /*else
+                else
                 {
-                    itemTransform.gameObject.SetActive( false );
-                }*/
+                    if ( type == ObjectType.MOVABLE )
+                    {
+                        levelModel.RemoveObject( itemPos );
+                    }
+                    else
+                    {
+                        GameOver( );
+                    }
+                }
             }
-            
+
+        }
+
+        private void GameOver( )
+        {
+            isGameOver = true;
+            AudioService.Instance.ChangeMusic( MusicType.OVER_MUSIC );
+            uiController.ToggleBlackCover( );
+        }
+
+        private void ReverseGameOver( )
+        {
+            isGameOver = false;
+            if ( currentRound == 1 )
+            {
+                currentMusic = MusicType.FIRST_MUSIC;
+            }
+            else
+            {
+                currentMusic = MusicType.SECOND_MUSIC;
+            }
+            AudioService.Instance.ChangeMusic( currentMusic );
+            uiController.ToggleBlackCover( );
         }
 
         private void MoveTheMovable( Vector3 movableCurrentPos, MoveDirection direction )
@@ -104,7 +149,7 @@ namespace MakeNewWay.Level
             levelModel.TryGetMovable( intMovableCurrentPos, out movableTransform );
 
             isMoving = true;
-            movableTransform.DOMove( movableNextPos, 0.3f ).OnComplete( ( ) =>
+            movableTransform.DOMove( movableNextPos, 0.2f ).OnComplete( ( ) =>
             {
                 isMoving = false;
                 undoController.AddToUndo( movableTransform, ObjectType.MOVABLE, intMovableCurrentPos, intMovableNextPos );
@@ -117,6 +162,8 @@ namespace MakeNewWay.Level
             levelModel.AddObject( intMovableNextPos, ObjectType.MOVABLE );
             levelModel.AddMovable( intMovableNextPos, movableTransform );
         }
+
+
 
         private Vector3 CalculateNextPos( Vector3 currentPos, MoveDirection direction )
         {
@@ -173,6 +220,11 @@ namespace MakeNewWay.Level
             {
                 return;
             }
+            if ( isGameOver )
+            {
+                ReverseGameOver( );
+            }
+            AudioService.Instance.PlaySound( SoundType.UNDO );
             undoController.Undo( );
         }
 

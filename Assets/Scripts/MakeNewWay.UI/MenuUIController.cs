@@ -9,6 +9,7 @@ namespace MakeNewWay.UI
         {
             if ( Input.GetKeyDown( KeyCode.Return)  || Input.GetKeyDown(KeyCode.KeypadEnter) )
             {
+                AudioService.Instance.PlaySound( SoundType.CLICK );
                 SceneManager.LoadScene( 1 );
             }
         }

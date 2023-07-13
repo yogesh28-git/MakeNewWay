@@ -36,7 +36,9 @@ namespace MakeNewWay.UI
                 }
 
                 //Subscribing to function
-                level.LvlButton.onClick.AddListener( delegate { LoadLevel( level.LevelSceneName ); } );
+                level.LvlButton.onClick.AddListener( delegate { 
+                    AudioService.Instance.PlaySound( SoundType.CLICK ); 
+                    LoadLevel( level.LevelSceneName ); } );
             }
             
         }

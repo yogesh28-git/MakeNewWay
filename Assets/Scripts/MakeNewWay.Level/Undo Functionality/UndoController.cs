@@ -10,14 +10,14 @@ namespace MakeNewWay.Level
 
         private LevelController levelController;
 
-        public UndoController( LevelController levelController)
+        public UndoController( LevelController levelController )
         {
             this.levelController = levelController;
         }
 
-        public void AddToUndo(Transform objTransform, ObjectType objType, Vector3Int prevPos, Vector3Int nextPos)
+        public void AddToUndo( Transform objTransform, ObjectType objType, Vector3Int prevPos )
         {
-            MovementInfo moveInfo = new MovementInfo(objTransform,objType,prevPos,nextPos,levelController);
+            MovementInfo moveInfo = new MovementInfo( objTransform, objType, prevPos, levelController );
             undoStack.Push( moveInfo );
         }
         public void Undo( )
@@ -28,12 +28,17 @@ namespace MakeNewWay.Level
                 return;
             moveInfo.UpdatePosDictionaries( );
             moveInfo.MoveToPrevPos( );
-            
 
-            if (moveInfo.ObjType == ObjectType.MOVABLE )
+
+            if ( moveInfo.ObjType == ObjectType.MOVABLE )
             {
                 Undo( );
             }
+        }
+
+        public void ResetUndo( )
+        {
+            undoStack.Clear( );
         }
     }
 }

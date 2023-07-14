@@ -1,6 +1,5 @@
 using DG.Tweening;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using MakeNewWay.UI;
@@ -57,12 +56,36 @@ namespace MakeNewWay.Level
             SpawnPlayer( 0 );
         }
 
+        private void Update( )
+        {
+            if ( !IsInputInterrupted )
+            {
+                InputHandler( );
+            }
+        }
+
+        public bool CheckRoundWin( )
+        {
+            Vector3Int playerPos = Vector3Int.FloorToInt( currentPlayerPart.Player.transform.position );
+            Vector3Int endPos = Vector3Int.FloorToInt( currentPlayerPart.End.transform.position );
+            if ( playerPos == endPos )
+            {
+                CheckLevelWin( );
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         private void SpawnPlayer( int playerIndex )
         {
             if(currentPlayerPart != null )
             {
-                //currentPlayerPart.Player.SetActive( false );
-                //currentPlayerPart.End.SetActive( false );
+                currentPlayerPart.Player.SetActive( false );
+                currentPlayerPart.End.SetActive( false );
+                levelController.ResetUndo( );
             }
 
             this.currentPlayerPart = playerParts[ playerIndex ];
@@ -86,14 +109,6 @@ namespace MakeNewWay.Level
             } );
 
             currentPlayerPart.Player.transform.DORotate( new Vector3( 0, 0, 360 ), 0.3f, RotateMode.FastBeyond360 ).SetLoops( 3, LoopType.Restart );
-        }
-
-        private void Update( )
-        {
-            if (!IsInputInterrupted)
-            {
-                InputHandler( );
-            }
         }
 
         private void InputHandler( )
@@ -208,22 +223,6 @@ namespace MakeNewWay.Level
                 SceneManager.LoadScene( 0 );
             }
         }
-
-        public bool CheckRoundWin( )
-        {
-            Vector3Int playerPos = Vector3Int.FloorToInt( currentPlayerPart.Player.transform.position );
-            Vector3Int endPos = Vector3Int.FloorToInt( currentPlayerPart.End.transform.position );
-            if ( playerPos == endPos )
-            {
-                CheckLevelWin( );
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
         private IEnumerator NextRoundCoroutine( )
         {
             IsInputInterrupted = true;

@@ -26,34 +26,15 @@ namespace MakeNewWay
             ChangeMusic( MusicType.FIRST_MUSIC );
         }
 
-        private AudioClip GetClip( SoundType type )
-        {
-            AudioClip clip = null;
-            bool isClipAvailable = soundsDict.TryGetValue( type, out clip );
-            if ( isClipAvailable )
-            {
-                return clip;
-            }
-            else
-            {
-                return sounds[0].Clip;
-            }
-        }
-
         public void PlaySound( SoundType type )
         {
             AudioClip clip = GetClip( type );
             sfxSource.PlayOneShot( clip );
         }
-        private void StartMusic( )
-        {
-            AudioClip clip = GetClip( SoundType.THEME );
-            musicSource.clip = clip;
-            musicSource.Play( );
-        }
+
         public void ChangeMusic( MusicType type )
         {
-            switch(type )
+            switch ( type )
             {
                 case MusicType.FIRST_MUSIC:
                     musicSource.volume = 0.4f;
@@ -69,5 +50,26 @@ namespace MakeNewWay
                     break;
             }
         }
+
+        private AudioClip GetClip( SoundType type )
+        {
+            AudioClip clip = null;
+            bool isClipAvailable = soundsDict.TryGetValue( type, out clip );
+            if ( isClipAvailable )
+            {
+                return clip;
+            }
+            else
+            {
+                return sounds[0].Clip;
+            }
+        }
+
+        private void StartMusic( )
+        {
+            AudioClip clip = GetClip( SoundType.THEME );
+            musicSource.clip = clip;
+            musicSource.Play( );
+        }      
     }
 }

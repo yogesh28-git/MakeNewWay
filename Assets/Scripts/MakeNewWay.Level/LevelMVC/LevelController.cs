@@ -1,6 +1,5 @@
 using DG.Tweening;
 using MakeNewWay.UI;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -16,8 +15,6 @@ namespace MakeNewWay.Level
         private bool isGameOver = false;
         private MusicType currentMusic;
         private int currentRound;
-
-
         private UndoController undoController;
         private UIController uiController;
 
@@ -34,7 +31,24 @@ namespace MakeNewWay.Level
             currentRound = 1;
         }
 
+        public void UndoGame( )
+        {
+            if ( isMoving )
+            {
+                return;
+            }
+            if ( isGameOver )
+            {
+                ReverseGameOver( );
+            }
+            AudioService.Instance.PlaySound( SoundType.UNDO );
+            undoController.Undo( );
+        }
 
+        public void ResetUndo( )
+        {
+            undoController.ResetUndo( );
+        }
 
         public void Move( MoveDirection direction )
         {
@@ -59,7 +73,7 @@ namespace MakeNewWay.Level
             playerTransform.DOMove( nextPos, 0.2f ).OnComplete( ( ) =>
             {
                 isMoving = false;
-                undoController.AddToUndo( playerTransform, ObjectType.NONE, intCurrentPos, intNextPos );
+                undoController.AddToUndo( playerTransform, ObjectType.NONE, intCurrentPos );
                 GroundCheckAndFall( playerTransform, ObjectType.NONE );
                 bool isRoundWon = levelView.CheckRoundWin( );
                 if ( isRoundWon )
@@ -75,6 +89,115 @@ namespace MakeNewWay.Level
             if ( nextObj == ObjectType.MOVABLE )
             {
                 MoveTheMovable( nextPos, direction );
+            }
+        }
+
+        private Vector3 CalculateNextPos( Vector3 currentPos, MoveDirection direction )
+        {
+            switch ( direction )
+            {
+                case MoveDirection.LEFT:
+                    currentPos.x -= 1;
+                    break;
+                case MoveDirection.RIGHT:
+                    currentPos.x += 1;
+                    break;
+                case MoveDirection.UP:
+                    currentPos.z += 1;
+                    break;
+                case MoveDirection.DOWN:
+                    currentPos.z -= 1;
+                    break;
+                case MoveDirection.BOTTOM:
+                    currentPos.y -= 1;
+                    break;
+            }
+            return currentPos;
+        }
+
+        private bool CanItMove( Vector3 target, MoveDirection direction )
+        {
+            Vector3Int intTarget = Vector3Int.FloorToInt( target );
+            ObjectType nextObj = ObjectType.NONE;
+            levelModel.GetObject( intTarget, out nextObj );
+
+            switch ( nextObj )
+            {
+                case ObjectType.OBSTACLE:
+                    return false;
+                case ObjectType.MOVABLE:
+                    Vector3 movableNextPos = CalculateNextPos( target, direction );
+                    intTarget = Vector3Int.FloorToInt( movableNextPos );
+                    ObjectType obj2 = ObjectType.NONE;
+                    levelModel.GetObject( intTarget, out obj2 );
+                    if ( obj2 == ObjectType.NONE )
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                default:
+                    //ObjectType.NONE
+                    return true;
+            }
+        }
+
+        private void MoveTheMovable( Vector3 movableCurrentPos, MoveDirection direction )
+        {
+            List<Transform> movables = new List<Transform>( );
+            Vector3Int intMovableCurrentPos = Vector3Int.FloorToInt( movableCurrentPos );
+            Transform movableTransform;
+            levelModel.TryGetMovable( intMovableCurrentPos, out movableTransform );
+            movables.Add( movableTransform );
+
+
+
+            ObjectType aboveMovable = ObjectType.NONE;
+            do
+            {
+                Vector3Int currentPos = Vector3Int.FloorToInt( movableCurrentPos );
+                Vector3Int upPos = new Vector3Int( currentPos.x, currentPos.y + 1, currentPos.z );
+                bool isMovable = levelModel.TryGetMovable( upPos, out movableTransform );
+                if ( isMovable )
+                {
+                    aboveMovable = ObjectType.MOVABLE;
+                    movableCurrentPos = movableTransform.position;
+                    movables.Add( movableTransform );
+                }
+                else
+                {
+                    aboveMovable = ObjectType.NONE;
+                }
+            } while ( aboveMovable != ObjectType.NONE );
+
+            isMoving = true;
+
+            foreach ( var mov in movables )
+            {
+                Vector3Int currentPos = Vector3Int.FloorToInt( mov.position );
+                Vector3 movableNextPos = CalculateNextPos( currentPos, direction );
+                Vector3Int intMovableNextPos = Vector3Int.FloorToInt( movableNextPos );
+
+                mov.DOMove( movableNextPos, 0.2f ).SetEase( Ease.OutQuad ).OnComplete( ( ) =>
+                {
+                    isMoving = false;
+                    if ( direction != MoveDirection.BOTTOM )
+                    {
+                        undoController.AddToUndo( mov, ObjectType.MOVABLE, currentPos );
+                    }
+                    levelModel.RemoveObject( currentPos );
+                    levelModel.RemoveMovable( currentPos );
+
+                    levelModel.AddObject( intMovableNextPos, ObjectType.MOVABLE );
+                    levelModel.AddMovable( intMovableNextPos, mov );
+                    if ( mov == movables[movables.Count - 1] )
+                    {
+                        GroundCheckAndFall( movables[0], ObjectType.MOVABLE );
+                    }
+                } );
+
             }
         }
 
@@ -139,129 +262,6 @@ namespace MakeNewWay.Level
             }
             AudioService.Instance.ChangeMusic( currentMusic );
             uiController.ToggleBlackCover( );
-        }
-
-        private void MoveTheMovable( Vector3 movableCurrentPos, MoveDirection direction )
-        {
-            List<Transform> movables = new List<Transform>();
-            Vector3Int intMovableCurrentPos = Vector3Int.FloorToInt( movableCurrentPos );
-            Transform movableTransform;
-            levelModel.TryGetMovable( intMovableCurrentPos, out movableTransform );
-            movables.Add(movableTransform );
-
-            isMoving = true;
-
-            ObjectType aboveMovable = ObjectType.NONE;
-            do
-            {
-                Vector3Int currentPos = Vector3Int.FloorToInt( movableCurrentPos );
-                Vector3Int upPos = new Vector3Int( currentPos.x, currentPos.y + 1, currentPos.z );
-                bool isMovable = levelModel.TryGetMovable( upPos, out movableTransform );
-                if ( isMovable )
-                {
-                    aboveMovable = ObjectType.MOVABLE;
-                    movableCurrentPos = movableTransform.position;
-                    movables.Add( movableTransform );
-                }
-                else
-                {
-                    aboveMovable = ObjectType.NONE;
-                }
-            } while ( aboveMovable != ObjectType.NONE );
-
-            foreach(var mov in  movables )
-            {
-                Vector3Int currentPos = Vector3Int.FloorToInt( mov.position );
-                Vector3 movableNextPos = CalculateNextPos( currentPos, direction );
-                Vector3Int intMovableNextPos = Vector3Int.FloorToInt( movableNextPos );
-                Debug.Log( currentPos + " : " + intMovableNextPos, mov.gameObject );
-
-                mov.DOMove( movableNextPos, 0.2f ).SetEase( Ease.OutQuad ).OnComplete( ( ) =>
-                {
-                    isMoving = false;
-                    if(direction != MoveDirection.BOTTOM)
-                    {
-                        undoController.AddToUndo( mov, ObjectType.MOVABLE, currentPos, intMovableNextPos );
-                    }
-                    levelModel.RemoveObject( currentPos );
-                    levelModel.RemoveMovable( currentPos );
-
-                    levelModel.AddObject( intMovableNextPos, ObjectType.MOVABLE );
-                    levelModel.AddMovable( intMovableNextPos, mov );
-                    if ( mov == movables[movables.Count-1] )
-                    {
-                        GroundCheckAndFall( movables[0], ObjectType.MOVABLE );
-                    }                  
-                } );
-                
-            }            
-        }
-
-        private Vector3 CalculateNextPos( Vector3 currentPos, MoveDirection direction )
-        {
-            switch ( direction )
-            {
-                case MoveDirection.LEFT:
-                    currentPos.x -= 1;
-                    break;
-                case MoveDirection.RIGHT:
-                    currentPos.x += 1;
-                    break;
-                case MoveDirection.UP:
-                    currentPos.z += 1;
-                    break;
-                case MoveDirection.DOWN:
-                    currentPos.z -= 1;
-                    break;
-                case MoveDirection.BOTTOM:
-                    currentPos.y -= 1;
-                    break;
-            }
-            return currentPos;
-        }
-
-        private bool CanItMove( Vector3 target, MoveDirection direction )
-        {
-            Vector3Int intTarget = Vector3Int.FloorToInt( target );
-            ObjectType nextObj = ObjectType.NONE;
-            levelModel.GetObject( intTarget, out nextObj );
-
-            switch ( nextObj )
-            {
-                case ObjectType.OBSTACLE:
-                    return false;
-                case ObjectType.MOVABLE:
-                    Vector3 movableNextPos = CalculateNextPos( target, direction );
-                    intTarget = Vector3Int.FloorToInt( movableNextPos );
-                    ObjectType obj2 = ObjectType.NONE;
-                    levelModel.GetObject( intTarget, out obj2 );
-                    if ( obj2 == ObjectType.NONE )
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                default:
-                    //ObjectType.NONE
-                    return true;
-            }
-        }
-
-        public void UndoGame( )
-        {
-            if ( isMoving )
-            {
-                return;
-            }
-            if ( isGameOver )
-            {
-                ReverseGameOver( );
-            }
-            AudioService.Instance.PlaySound( SoundType.UNDO );
-            undoController.Undo( );
-        }
-
+        }      
     }
 }

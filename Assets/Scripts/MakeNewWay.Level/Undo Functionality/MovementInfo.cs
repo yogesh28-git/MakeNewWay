@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace MakeNewWay.Level
@@ -9,16 +7,14 @@ namespace MakeNewWay.Level
         private Transform objTransform;
         public ObjectType ObjType { get; private set; }
         private Vector3Int prevPos;
-        private Vector3Int newPos;
 
         private LevelModel levelModel;
 
-        public MovementInfo(Transform objTransform, ObjectType objType, Vector3Int prevPos, Vector3Int newPos, LevelController levelController)
+        public MovementInfo(Transform objTransform, ObjectType objType, Vector3Int prevPos, LevelController levelController)
         {
             this.objTransform = objTransform;
             this.ObjType = objType;
             this.prevPos = prevPos;
-            this.newPos = newPos;
             this.levelModel = levelController.LevelModel;
         }
 

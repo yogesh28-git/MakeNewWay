@@ -5,6 +5,7 @@ namespace MakeNewWay.Level
         UP,
         DOWN, 
         LEFT, 
-        RIGHT
+        RIGHT,
+        BOTTOM
     }
 }

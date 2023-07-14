@@ -89,32 +89,34 @@ namespace MakeNewWay.Level
             {
                 if ( itemPos.y > -5 )
                 {
-                    isMoving = true;
-                    itemTransform.DOMoveY( downPos.y, 0.2f ).SetEase( Ease.OutQuad ).OnComplete( ( ) =>
-                    {
-                        isMoving = false;
-                        if ( type == ObjectType.MOVABLE )
-                        {
-                            levelModel.RemoveObject( itemPos );
-                            Vector3Int itemNewPos = Vector3Int.FloorToInt( itemTransform.position );
-                            levelModel.AddObject( itemNewPos, ObjectType.MOVABLE );
-                        }
-                        GroundCheckAndFall( itemTransform, type );
-                    } );
-                }
-                else
-                {
                     if ( type == ObjectType.MOVABLE )
                     {
-                        levelModel.RemoveObject( itemPos );
+                        MoveTheMovable( itemPos, MoveDirection.BOTTOM );
                     }
                     else
                     {
+                        isMoving = true;
+                        itemTransform.DOMoveY( downPos.y, 0.2f ).SetEase( Ease.OutQuad ).OnComplete( ( ) =>
+                        {
+                            isMoving = false;
+                            GroundCheckAndFall( itemTransform, type );
+                        } );
+                    }
+                }
+                else
+                {
+                    if(type == ObjectType.MOVABLE )
+                    {
+                        levelModel.RemoveObject( itemPos );
+                        levelModel.RemoveMovable( itemPos );
+                    }
+                    else
+                    { 
                         GameOver( );
                     }
                 }
-            }
 
+            }
         }
 
         private void GameOver( )
@@ -172,19 +174,26 @@ namespace MakeNewWay.Level
                 Vector3Int currentPos = Vector3Int.FloorToInt( mov.position );
                 Vector3 movableNextPos = CalculateNextPos( currentPos, direction );
                 Vector3Int intMovableNextPos = Vector3Int.FloorToInt( movableNextPos );
+                Debug.Log( currentPos + " : " + intMovableNextPos, mov.gameObject );
 
-                mov.DOMove( movableNextPos, 0.2f ).OnComplete( ( ) =>
+                mov.DOMove( movableNextPos, 0.2f ).SetEase( Ease.OutQuad ).OnComplete( ( ) =>
                 {
                     isMoving = false;
-                    undoController.AddToUndo( mov, ObjectType.MOVABLE, currentPos, intMovableNextPos );
-                    GroundCheckAndFall( mov, ObjectType.MOVABLE );
+                    if(direction != MoveDirection.BOTTOM)
+                    {
+                        undoController.AddToUndo( mov, ObjectType.MOVABLE, currentPos, intMovableNextPos );
+                    }
+                    levelModel.RemoveObject( currentPos );
+                    levelModel.RemoveMovable( currentPos );
+
+                    levelModel.AddObject( intMovableNextPos, ObjectType.MOVABLE );
+                    levelModel.AddMovable( intMovableNextPos, mov );
+                    if ( mov == movables[movables.Count-1] )
+                    {
+                        GroundCheckAndFall( movables[0], ObjectType.MOVABLE );
+                    }                  
                 } );
-
-                levelModel.RemoveObject( currentPos );
-                levelModel.RemoveMovable( currentPos );
-
-                levelModel.AddObject( intMovableNextPos, ObjectType.MOVABLE );
-                levelModel.AddMovable( intMovableNextPos, mov );
+                
             }            
         }
 
@@ -203,6 +212,9 @@ namespace MakeNewWay.Level
                     break;
                 case MoveDirection.DOWN:
                     currentPos.z -= 1;
+                    break;
+                case MoveDirection.BOTTOM:
+                    currentPos.y -= 1;
                     break;
             }
             return currentPos;

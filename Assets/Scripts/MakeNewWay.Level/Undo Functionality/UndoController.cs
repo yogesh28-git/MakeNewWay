@@ -26,8 +26,9 @@ namespace MakeNewWay.Level
             bool isNotEmpty = undoStack.TryPop( out moveInfo );
             if ( !isNotEmpty )
                 return;
-            moveInfo.MoveToPrevPos( );
             moveInfo.UpdatePosDictionaries( );
+            moveInfo.MoveToPrevPos( );
+            
 
             if (moveInfo.ObjType == ObjectType.MOVABLE )
             {

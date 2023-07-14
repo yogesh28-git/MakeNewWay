@@ -31,8 +31,9 @@ namespace MakeNewWay.Level
         {
             if(ObjType == ObjectType.MOVABLE )
             {
-                levelModel.RemoveObject( newPos );
-                levelModel.RemoveMovable( newPos );
+                Vector3Int currentPos = Vector3Int.FloorToInt( objTransform.position );
+                levelModel.RemoveObject( currentPos );
+                levelModel.RemoveMovable( currentPos );
                 levelModel.AddObject( prevPos, ObjType );
                 levelModel.AddMovable( prevPos, objTransform );
             }

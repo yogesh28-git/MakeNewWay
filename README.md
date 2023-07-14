@@ -8,7 +8,7 @@
 ## Technical Description
 
 - Level itself has implements a system that tracks position of the blocks.
-    - Used different types of blocks like Player, Movable, Obstacle tec and managed their positions using Dictionaries. 
+    - Used different types of blocks like Player, Movable, Obstacle etc. and managed their positions using Dictionaries. 
 - Model-View-Controller-Service(MVC-S) pattern:
     - Level itself is implemented using MVC.
     - LevelView(Monobehaviour) collects data about level, gathers input and manages coroutines
